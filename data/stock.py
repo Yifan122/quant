@@ -7,7 +7,6 @@ import pandas as pd
 import datetime
 import os
 
-
 # 设置行列不忽略
 pd.set_option('display.max_rows', 100000)
 pd.set_option('display.max_columns', 1000)
@@ -23,15 +22,36 @@ def init_db():
     :return:
     '''
     # 1.获取所有沪深300股票代码
-    stocks = get_index_list()
+    stocks = get_index_list('399673.XSHE')
+    print(stocks)
 
     # 2.存储到csv文件中
-    for code in stocks[141:]:
-    # for code in ['600887.XSHG']:
+    for code in stocks:
         print(code)
         df = get_single_price(code, update_freq)
         export_data(df, code, 'price')
         print(df.head())
+
+    # 3. 初始化每年的财务数据
+    annul_report()
+
+
+def annul_report(start_year=2010, end_year=2021):
+    """
+    获取历年来的估值数据（valuation），资产负债数据（balance），现金流数据(cash_flow), 利润数据(income)
+    并且保存到 data_root/fundamental 目录下面
+    :param start_year:
+    :param end_year:
+    :return:
+    """
+    fundamental_dir = data_root + '/fundamental/'
+    if not os.path.isdir(fundamental_dir):
+        os.makedirs(fundamental_dir)
+
+    for year in range(start_year, end_year):
+        annul_report_df = get_fundamentals(query(valuation, balance, cash_flow, income), statDate=str(year))
+        pd.DataFrame(annul_report_df).to_csv(fundamental_dir + str(year) + '.csv')
+
 
 def append_fundamental_data(code, df):
     """
@@ -42,9 +62,9 @@ def append_fundamental_data(code, df):
     """
     fundamentals = pd.concat(
         [get_fundamentals(query(
-             valuation
-            ,indicator
-            ,balance
+            valuation
+            , indicator
+            , balance
         ).filter(valuation.code == code), date=date) for date in df.index])
 
     fundamentals.index = pd.to_datetime(fundamentals['day'])
@@ -106,7 +126,7 @@ def export_data(data, filename, type, mode=None):
     :param mode: a代表追加，none代表默认w写入
     :return:
     """
-    data_dir = data_root + type + '/' +  update_freq
+    data_dir = data_root + type + '/' + update_freq
     if not os.path.isdir(data_dir):
         os.makedirs(data_dir)
 
@@ -216,16 +236,10 @@ def update_daily_price(stock_code, type='price'):
 
 
 if __name__ == '__main__':
+    """
+    初始化数据库，这里采取最简单的csv格式来存取所有的数据
+    """
     auth('15889545353', '545353')  # 账号是申请时所填写的手机号
-    # data = get_fundamentals(query(indicator), statDate='2020')  # 获取财务指标数据
-    # print(data)
-
-    # df = get_fundamentals(query(valuation), date='2021-03-24')
-    # print(df)
-
-    # 5.3获取沪深300指数成分股代码
-    # print(get_index_list())
-    # print(len(get_index_list()))
 
     init_db()
-    # update_daily_price('000001.XSHE')
+    annul_report()
