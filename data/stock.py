@@ -14,6 +14,7 @@ pd.set_option('display.max_columns', 1000)
 # 全局变量
 data_root = '/Users/yifan.zeng/PycharmProjects/quant/rowdata/'
 update_freq = '10d'
+all_sec_info = None
 
 
 def init_db():
@@ -49,7 +50,8 @@ def annul_report(start_year=2010, end_year=2021):
         os.makedirs(fundamental_dir)
 
     for year in range(start_year, end_year):
-        annul_report_df = get_fundamentals(query(valuation, balance, cash_flow, income), statDate=str(year))
+        print(year)
+        annul_report_df = get_fundamentals(query(indicator, balance, cash_flow, income), statDate=str(year))
         pd.DataFrame(annul_report_df).to_csv(fundamental_dir + str(year) + '.csv')
 
 
@@ -235,11 +237,18 @@ def update_daily_price(stock_code, type='price'):
     print("股票数据已经更新成功：", stock_code)
 
 
+def get_display_name(code):
+    security = get_security_info(code)
+    return security.display_name
+
+
 if __name__ == '__main__':
     """
     初始化数据库，这里采取最简单的csv格式来存取所有的数据
     """
     auth('15889545353', '545353')  # 账号是申请时所填写的手机号
 
-    init_db()
-    annul_report()
+    print(get_display_name('000661.XSHE'))
+
+    # init_db()
+    # annul_report()
